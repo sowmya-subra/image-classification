@@ -1,17 +1,17 @@
 # Image Classification — MNIST Digit Classifier
 
-Group Project 1 for Optimization: a convolutional neural network trained to classify
+This repo hosts the codebase for a convolutional neural network trained to classify
 handwritten digits from the MNIST dataset (target: >99% test accuracy), wrapped in an
 interactive Django webpage that lets a signed-in user upload a 28x28 CSV of pixel
 intensities and get back a live classification.
 
-## Project goals
+## Goals
 
 1. Train a CNN on MNIST that exceeds 99% accuracy on a held-out validation set
    (`validation_split = 0.2`), then retrain the winning architecture on the full
    training set and report/analyze its performance on the official MNIST test set.
 2. Plot and analyze misclassified digits — what gets confused with what, and why.
-3. Build an interactive two-page website (login-gated "blog post" style) that:
+3. Build an interactive two-page website that:
    - describes how the network was built and what worked/didn't, and
    - lets a visitor upload a CSV, see the image, and get a live prediction from the
      trained TensorFlow model.
