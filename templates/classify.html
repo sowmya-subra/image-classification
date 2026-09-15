@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Classify a digit</title>
+</head>
+<body>
+    <h1>Upload a digit</h1>
+
+    {% if error %}
+        <p style="color: crimson;">{{ error }}</p>
+    {% endif %}
+
+    {% if digit is not None %}
+        <img src="{{ image }}" alt="The uploaded digit">
+        <h2>Prediction: {{ digit }}</h2>
+        <p>Confidence: {{ confidence }}%</p>
+        <a href="{% url 'classify' %}">Start over</a>
+    {% else %}
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="file" name="csv_file" accept=".csv">
+            <button type="submit">Classify</button>
+        </form>
+    {% endif %}
+
+    <p><a href="{% url 'writeup' %}">Back to the write-up</a></p>
+</body>
+</html>
