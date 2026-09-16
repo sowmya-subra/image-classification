@@ -1,0 +1,13 @@
+venv/
+__pycache__/
+*.pyc
+.git/
+.gitignore
+.DS_Store
+.claude/
+db.sqlite3
+staticfiles/
+GP1_CNN_Training_LB_Final.ipynb
+sample_csvs/
+make_test_csvs.py
+test_csv_parser.py

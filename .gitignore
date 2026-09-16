@@ -3,6 +3,7 @@ db.sqlite3
 __pycache__/
 *.pyc
 .DS_Store
+staticfiles/
 
 test_digit.csv
 short.csv

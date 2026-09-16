@@ -33,4 +33,5 @@ termcolor==3.3.0
 typing_extensions==4.16.0
 urllib3==2.7.0
 wheel==0.48.0
+whitenoise==6.12.0
 wrapt==2.4.1

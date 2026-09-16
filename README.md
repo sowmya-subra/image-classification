@@ -126,6 +126,34 @@ The intended deployment path:
 > Remember to delete the Lightsail instance once the free-tier period ends to avoid
 > being charged.
 
+### Environment variables
+
+Production settings (`DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`) are
+read from the environment; local runs work with no setup thanks to dev-safe defaults.
+
+| Variable | Default | Notes |
+|---|---|---|
+| `DJANGO_SECRET_KEY` | a fixed dev-only key | Set to a real secret in production. |
+| `DJANGO_DEBUG` | `True` | Set to `False` in production. |
+| `DJANGO_ALLOWED_HOSTS` | (empty) | Comma-separated hosts, e.g. the Lightsail IP or ngrok domain. Ignored while `DJANGO_DEBUG=True`. |
+
+### Running with Docker
+
+```bash
+docker build -t mnist-classifier .
+docker run -p 8000:8000 \
+  -e DJANGO_DEBUG=False \
+  -e DJANGO_ALLOWED_HOSTS="*" \
+  mnist-classifier
+```
+
+The container runs migrations (which provisions the `dan` account) on every start,
+then serves the app on port 8000. `DJANGO_ALLOWED_HOSTS="*"` is the simplest option
+behind an ngrok tunnel, since the tunnel already restricts who can reach the machine
+and free ngrok domains rotate on every restart; scope it to a fixed host if you have
+one. The SQLite database lives inside the container by default, so add a volume
+mount (`-v $(pwd)/db.sqlite3:/app/db.sqlite3`) if logins need to survive a restart.
+
 ## Status
 
 - [x] Train and compare CNN architectures on MNIST (validation split)
@@ -136,7 +164,7 @@ The intended deployment path:
 - [x] Django project: CSV upload + classification page with "start over"
 - [x] CSV validation (shape/type checks + user-facing error messages)
 - [x] Polish the site's visual design
-- [ ] Dockerize the Django + TensorFlow backend
+- [x] Dockerize the Django + TensorFlow backend
 - [ ] Deploy to AWS Lightsail
 - [ ] Expose the app publicly via `ngrok` inside `tmux`
 - [ ] Screengrab of the cloud service running the app
