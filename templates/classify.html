@@ -1,28 +1,81 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Classify a digit</title>
-</head>
-<body>
-    <h1>Upload a digit</h1>
+{% extends "base.html" %}
+
+{% block title %}Classify a digit | MNIST Digit Classifier{% endblock %}
+
+{% block content %}
+<section class="page-classify">
+    <h1>Classify a digit</h1>
+    <p class="lede">
+        Upload a 28&times;28 CSV of pixel intensities (either raw 0&ndash;255 values or
+        already scaled to 0&ndash;1, no header row) and the trained CNN will predict the digit.
+    </p>
 
     {% if error %}
-        <p style="color: crimson;">{{ error }}</p>
+        <div class="alert alert-error">{{ error }}</div>
     {% endif %}
 
     {% if digit is not None %}
-        <img src="{{ image }}" alt="The uploaded digit">
-        <h2>Prediction: {{ digit }}</h2>
-        <p>Confidence: {{ confidence }}%</p>
-        <a href="{% url 'classify' %}">Start over</a>
+        <div class="result-card">
+            <img src="{{ image }}" alt="The uploaded digit" class="result-image">
+            <div class="result-details">
+                <span class="result-label">Prediction</span>
+                <span class="result-digit">{{ digit }}</span>
+                <span class="result-confidence">{{ confidence }}% confidence</span>
+                <a href="{% url 'classify' %}" class="button button-secondary">Start over</a>
+            </div>
+        </div>
     {% else %}
-        <form method="post" enctype="multipart/form-data">
+        <form method="post" enctype="multipart/form-data" class="upload-card" id="upload-form">
             {% csrf_token %}
-            <input type="file" name="csv_file" accept=".csv">
-            <button type="submit">Classify</button>
+            <label for="csv_file" class="upload-dropzone" id="dropzone">
+                <span class="upload-icon">&#8593;</span>
+                <span class="upload-text" id="dropzone-text">Choose a CSV file or drag it here</span>
+                <input type="file" id="csv_file" name="csv_file" accept=".csv">
+            </label>
+            <div class="upload-filename" id="upload-filename"></div>
+            <button type="submit" class="button button-primary">Classify</button>
         </form>
     {% endif %}
 
-    <p><a href="{% url 'writeup' %}">Back to the write-up</a></p>
-</body>
-</html>
+    <p class="read-more">Curious how it works? <a href="{% url 'writeup' %}">Read the write-up &rarr;</a></p>
+
+    <script>
+        (function () {
+            var dropzone = document.getElementById("dropzone");
+            var input = document.getElementById("csv_file");
+            var filenameLabel = document.getElementById("upload-filename");
+            if (!dropzone || !input) return;
+
+            function showFilename() {
+                if (input.files.length > 0) {
+                    filenameLabel.textContent = "Selected: " + input.files[0].name;
+                }
+            }
+
+            input.addEventListener("change", showFilename);
+
+            ["dragenter", "dragover"].forEach(function (eventName) {
+                dropzone.addEventListener(eventName, function (e) {
+                    e.preventDefault();
+                    dropzone.classList.add("dragover");
+                });
+            });
+
+            ["dragleave", "drop"].forEach(function (eventName) {
+                dropzone.addEventListener(eventName, function (e) {
+                    e.preventDefault();
+                    dropzone.classList.remove("dragover");
+                });
+            });
+
+            dropzone.addEventListener("drop", function (e) {
+                var files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    input.files = files;
+                    showFilename();
+                }
+            });
+        })();
+    </script>
+</section>
+{% endblock %}

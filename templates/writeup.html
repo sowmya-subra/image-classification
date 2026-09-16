@@ -1,12 +1,126 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>MNIST Digit Classifier</title>
-</head>
-<body>
-    <h1>How we built the network</h1>
-    <p>Placeholder — the write-up content goes here.</p>
-    <p>Logged in as {{ user.username }}.</p>
-    <a href="{% url 'logout' %}">Log out</a>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}How I built this | MNIST Digit Classifier{% endblock %}
+
+{% block content %}
+<article class="writeup">
+    <header>
+        <p class="eyebrow">Project write-up</p>
+        <h1>Teaching a network to read handwriting</h1>
+        <p class="lede">
+            A walkthrough of how this convolutional neural network was designed, trained,
+            and evaluated on the MNIST handwritten digit dataset: what worked, what
+            didn't, and where it still gets confused.
+        </p>
+    </header>
+
+    <section>
+        <h2>Comparing architectures</h2>
+        <p>
+            Four candidate architectures were trained with <code>validation_split=0.2</code>,
+            batch size 64, the Adam optimizer, and sparse categorical cross-entropy loss, on
+            pixel values normalized to <code>[0, 1]</code>.
+        </p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Architecture</th>
+                    <th>Structure</th>
+                    <th>Test accuracy</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1: Simple</td>
+                    <td>1 conv (16 filters) + pool &rarr; dense(32)</td>
+                    <td>98.01%</td>
+                </tr>
+                <tr>
+                    <td>2: Larger</td>
+                    <td>3 conv layers (64/128/128) + pool &rarr; dense(128) + dropout</td>
+                    <td>99.19%</td>
+                </tr>
+                <tr>
+                    <td>3: Balanced</td>
+                    <td>3 conv layers (32/64/64) + pool &rarr; dense(64) + dropout</td>
+                    <td><strong>99.25%</strong></td>
+                </tr>
+                <tr>
+                    <td>4: Push for 99.5%</td>
+                    <td>Architecture 2/3 style + BatchNorm, 15 epochs</td>
+                    <td>99.24%</td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            <strong>Architecture 3 (Balanced)</strong> performed best on the validation set,
+            so it was rebuilt and retrained on the entire training set (no validation split).
+            On the official MNIST test set, it reached
+            <span class="stat-badge">99.31% test accuracy</span>.
+        </p>
+        <p>
+            This is close to the 99.08% validation accuracy seen during model selection,
+            suggesting the model generalizes well rather than overfitting: training on
+            all 60,000 images (instead of holding back 20%) simply gave it more examples to
+            learn from.
+        </p>
+        <h2>Why many small filters?</h2>
+        <p>
+            Multiple layers of smaller convolution filters (e.g. 3&times;3) generally
+            outperform fewer, larger filters, and stacking several conv/max-pool blocks helps
+            the network build up more abstract features, as long as pooling isn't so
+            aggressive that the flattened feature map loses too much spatial information
+            before it reaches the dense layers.
+        </p>
+    </section>
+
+    <section>
+        <h2>Misclassification analysis</h2>
+        <p>
+            Out of 10,000 test images, the final model misclassified only
+            <span class="stat-badge">69 (0.69%)</span>. A few patterns stood out:
+        </p>
+        <ul>
+            <li>
+                <strong>Common confusions:</strong> 4&rarr;9, 6&rarr;0, 3&rarr;5, 2&rarr;1/4/7,
+                and 1&rarr;7 show up repeatedly. These pairs share similar curves or strokes
+                when handwritten quickly or messily: a 6 with a large loop can resemble
+                a 0, a 2 with a sharp angled top can resemble a 7, and a 1 written with a
+                serif-like flick at the top can resemble a 7.
+            </li>
+            <li>
+                <strong>The mistakes aren't random.</strong> They cluster around visually
+                similar digit shapes rather than being spread evenly across all possible
+                confusions. The model is failing on genuinely ambiguous handwriting,
+                not making arbitrary errors.
+            </li>
+            <li>
+                <strong>Some errors are ambiguous even to a human eye.</strong> Several
+                misclassified digits (a 2 read as a 1, a 3 read as a 5) are messy enough that
+                a person might reasonably guess the same wrong answer.
+            </li>
+        </ul>
+        <p>
+            <strong>Could the model reach 100% accuracy?</strong> Realistically, no.
+            Some handwritten digits in the dataset are inherently ambiguous or poorly formed,
+            so there's a ceiling on achievable accuracy driven by the legibility of the input
+            itself, not the model architecture. A human classifier would likely make some of
+            the same mistakes on these particular images.
+        </p>
+
+        <h3>Well-classified examples</h3>
+        <div class="placeholder-block">
+            TODO: drop in a few high-confidence correctly-classified digit images here
+            (e.g. as an <code>.image-gallery</code> grid of <code>&lt;figure&gt;</code>
+            elements, each with a small caption like "Predicted: 7 (99.9%)").
+        </div>
+
+        <h3>Misclassified examples</h3>
+        <div class="placeholder-block">
+            TODO: drop in a few misclassified digit images here, same
+            <code>.image-gallery</code> pattern, captioned with true vs. predicted label
+            (e.g. "True: 4 &middot; Predicted: 9").
+        </div>
+    </section>
+</article>
+{% endblock %}
