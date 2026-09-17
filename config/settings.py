@@ -39,6 +39,14 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
+# We sit behind a TLS-terminating proxy (ngrok, and Lightsail generally). Without
+# this, Django thinks every request is plain HTTP (since it only ever talks HTTP to
+# the local process) and computes CSRF's expected Origin as "http://...", which never
+# matches the "https://..." Origin every real browser sends, failing CSRF for anyone
+# not on plain HTTP. ngrok always sets X-Forwarded-Proto, so this is safe to enable
+# unconditionally.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 
 # Application definition
 
