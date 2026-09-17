@@ -165,8 +165,8 @@ mount (`-v $(pwd)/db.sqlite3:/app/db.sqlite3`) if logins need to survive a resta
 - [x] CSV validation (shape/type checks + user-facing error messages)
 - [x] Polish the site's visual design
 - [x] Dockerize the Django + TensorFlow backend
-- [ ] Deploy to AWS Lightsail
-- [ ] Expose the app publicly via `ngrok` inside `tmux`
+- [x] Deploy to AWS Lightsail
+- [x] Expose the app publicly via `ngrok` inside `tmux`
 - [ ] Screengrab of the cloud service running the app
 
 ## Running the notebook locally
