@@ -6,7 +6,7 @@
 <article class="writeup">
     <header>
         <p class="eyebrow">Project write-up</p>
-        <h1>Teaching a network to read handwriting</h1>
+        <h1>Building a 99%+ Accuracy MNIST Digit Classifier</h1>
         <p class="lede">
             A walkthrough of how this convolutional neural network was designed, trained,
             and evaluated on the MNIST handwritten digit dataset: what worked, what
@@ -15,11 +15,46 @@
     </header>
 
     <section>
-        <h2>Comparing architectures</h2>
+        <h2>The problem at hand</h2>
         <p>
-            Four candidate architectures were trained with <code>validation_split=0.2</code>,
-            batch size 64, the Adam optimizer, and sparse categorical cross-entropy loss, on
-            pixel values normalized to <code>[0, 1]</code>.
+            MNIST is a dataset of 70,000 handwritten digits divided into 60,000 training
+            examples and 10,000 testing examples. Each example is a 28&times;28 grayscale
+            image where every pixel is an intensity value ranging from 0 (black) to 255
+            (white), and labeled with the digit (0&ndash;9) it represents.
+        </p>
+        <p>
+            The intention of this website and class project is to train a Convolutional
+            Neural Network (CNN) that classifies these digits with greater than 99%
+            accuracy. To accomplish this, we need to understand why the CNN makes
+            mistakes, and ship it behind a live web page so anyone can upload their own
+            28&times;28 grid and get a prediction.
+        </p>
+    </section>
+
+    <section>
+        <h2>Preprocessing</h2>
+        <p>
+            Before training the model, every image was normalized from its raw 0&ndash;255
+            pixel range down to 0&ndash;1 (divided by 255), and reshaped from
+            <code>(28, 28)</code> to <code>(28, 28, 1)</code> to give it an explicit
+            single-channel dimension, which is what Keras's <code>Conv2D</code> layers
+            expect. This is also what the CSV upload pipeline on the classify page does
+            to the uploaded file before it reaches the model. It will detect whether the
+            values are already 0&ndash;1 or if they are still raw (0&ndash;255), and
+            normalize accordingly. Additionally, it will detect and alert the user if
+            the uploaded file is not in the correct format.
+        </p>
+    </section>
+
+    <section>
+        <h2>Trying four architectures</h2>
+        <p>
+            Rather than committing to one design up front, four architectures were
+            trained and compared. A <code>validation_split=0.2</code> was used during
+            architecture selection, which means that 20% of the training data was held
+            out for validation while the official MNIST test set remained untouched. The
+            models used the Adam optimizer, sparse categorical cross-entropy loss, and a
+            batch size of 64.
         </p>
         <table>
             <thead>
@@ -31,84 +66,97 @@
             </thead>
             <tbody>
                 <tr>
-                    <td>1: Simple</td>
-                    <td>1 conv (16 filters) + pool &rarr; dense(32)</td>
+                    <td>1 &mdash; Simple</td>
+                    <td>1 convolutional layer (16 filters) + pooling &rarr; Dense(32)</td>
                     <td>98.01%</td>
                 </tr>
                 <tr>
-                    <td>2: Larger</td>
-                    <td>3 conv layers (64/128/128) + pool &rarr; dense(128) + dropout</td>
+                    <td>2 &mdash; Larger</td>
+                    <td>3 convolutional layers (64/128/128 filters) + pooling &rarr; Dense(128) + Dropout</td>
                     <td>99.19%</td>
                 </tr>
                 <tr>
-                    <td>3: Balanced</td>
-                    <td>3 conv layers (32/64/64) + pool &rarr; dense(64) + dropout</td>
+                    <td>3 &mdash; Balanced</td>
+                    <td>3 convolutional layers (32/64/64 filters) + pooling &rarr; Dense(64) + dropout</td>
                     <td><strong>99.25%</strong></td>
                 </tr>
                 <tr>
-                    <td>4: Push for 99.5%</td>
-                    <td>Architecture 2/3 style + BatchNorm, 15 epochs</td>
+                    <td>4 &mdash; Push for 99.5%</td>
+                    <td>Similar to Architectures 2&amp;3, with Batch Normalization and 15 training epochs</td>
                     <td>99.24%</td>
                 </tr>
             </tbody>
         </table>
         <p>
-            <strong>Architecture 3 (Balanced)</strong> performed best on the validation set,
-            so it was rebuilt and retrained on the entire training set (no validation split).
-            On the official MNIST test set, it reached
-            <span class="stat-badge">99.31% test accuracy</span>.
+            The comparison showed that Architecture 1, with a simple one-convolution-layer,
+            performed noticeably worse than the deeper architectures by at least 1
+            percentage point. The deeper networks were able to learn more complex visual
+            features by applying multiple convolutional layers sequentially.
         </p>
         <p>
-            This is close to the 99.08% validation accuracy seen during model selection,
-            suggesting the model generalizes well rather than overfitting: training on
-            all 60,000 images (instead of holding back 20%) simply gave it more examples to
-            learn from.
+            Architectures 2, 3, and 4 all performed similarly, with test accuracies around
+            99.2&ndash;99.3%. Adding additional complexity, such as the changes included
+            in Architecture 4, did not produce a meaningful improvement compared to the
+            other deep architectures.
         </p>
-        <h2>Why many small filters?</h2>
         <p>
-            Multiple layers of smaller convolution filters (e.g. 3&times;3) generally
-            outperform fewer, larger filters, and stacking several conv/max-pool blocks helps
-            the network build up more abstract features, as long as pooling isn't so
-            aggressive that the flattened feature map loses too much spatial information
-            before it reaches the dense layers.
+            Based on this comparison and analysis among all models, Architecture 3 was
+            selected as the final architecture, with a test accuracy of 99.25% in the
+            architecture comparison:
+        </p>
+        <pre><code>Conv2D(32, 3x3) &rarr; MaxPool(2x2) &rarr; Conv2D(64, 3x3) &rarr; MaxPool(2x2) &rarr;
+Conv2D(64, 3x3) &rarr; Flatten &rarr; Dense(64) &rarr; Dropout(0.5) &rarr; Dense(10, softmax)</code></pre>
+        <p>
+            This architecture contains 93,322 trainable parameters. It also provides
+            enough capacity to learn the visual patterns needed for MNIST classification
+            while remaining relatively small and computationally efficient.
         </p>
     </section>
 
     <section>
-        <h2>Misclassification analysis</h2>
+        <h2>Retraining on the full dataset</h2>
         <p>
-            Out of 10,000 test images, the final model misclassified only
-            <span class="stat-badge">69 (0.69%)</span>. A few patterns stood out:
+            After selecting Architecture 3, the model was rebuilt from scratch and
+            retrained using the entire 60,000 image MNIST training set. This time, no
+            validation split was used because the validation set had served its purpose
+            during architecture selection. Using the full training set allowed the final
+            model to learn from all available training examples.
         </p>
-        <ul>
-            <li>
-                <strong>Common confusions:</strong> 4&rarr;9, 6&rarr;0, 3&rarr;5, 2&rarr;1/4/7,
-                and 1&rarr;7 show up repeatedly. These pairs share similar curves or strokes
-                when handwritten quickly or messily: a 6 with a large loop can resemble
-                a 0, a 2 with a sharp angled top can resemble a 7, and a 1 written with a
-                serif-like flick at the top can resemble a 7.
-            </li>
-            <li>
-                <strong>The mistakes aren't random.</strong> They cluster around visually
-                similar digit shapes rather than being spread evenly across all possible
-                confusions. The model is failing on genuinely ambiguous handwriting,
-                not making arbitrary errors.
-            </li>
-            <li>
-                <strong>Some errors are ambiguous even to a human eye.</strong> Several
-                misclassified digits (a 2 read as a 1, a 3 read as a 5) are messy enough that
-                a person might reasonably guess the same wrong answer.
-            </li>
-        </ul>
         <p>
-            <strong>Could the model reach 100% accuracy?</strong> Realistically, no.
-            Some handwritten digits in the dataset are inherently ambiguous or poorly formed,
-            so there's a ceiling on achievable accuracy driven by the legibility of the input
-            itself, not the model architecture. A human classifier would likely make some of
-            the same mistakes on these particular images.
+            The final model was then evaluated on the official 10,000-image MNIST test
+            set.
+        </p>
+        <p><span class="stat-badge">Final test accuracy: 99.31%</span></p>
+        <p>
+            Note that the final model's 99.31% test accuracy was slightly higher than
+            the 99.25% accuracy Architecture 3 achieved during architecture selection.
+            Because the final model was trained on the full training set rather than
+            only the 80% training portion used during architecture selection, the
+            additional training examples may have contributed to the improvement.
+        </p>
+        <p>
+            The final test set was kept separate from the training and architecture
+            selection process, which provides an evaluation of the model on previously
+            unseen MNIST images.
+        </p>
+    </section>
+
+    <section>
+        <h2>What the model gets right &mdash; and wrong</h2>
+        <p>
+            Out of 10,000 test images, the final model correctly classified 9,931 and
+            incorrectly classified 69, which is a
+            <span class="stat-badge">0.69% error rate</span>.
         </p>
 
         <h3>Well-classified examples</h3>
+        <p>
+            The correctly classified examples above demonstrate the types of images the
+            model handles well. These digits generally have clear and distinguishable
+            shapes, with strokes and loops that make their identity relatively easy to
+            determine. This is similar to how a person would read them with their own
+            eyes.
+        </p>
         <div class="placeholder-block">
             TODO: drop in a few high-confidence correctly-classified digit images here
             (e.g. as an <code>.image-gallery</code> grid of <code>&lt;figure&gt;</code>
@@ -116,11 +164,129 @@
         </div>
 
         <h3>Misclassified examples</h3>
+        <p>
+            The misclassified examples provide insight into where our selected model has
+            difficulty. Several errors involve visually similar digits, such as
+            mistaking 4&rarr;9, 6&rarr;0, 3&rarr;5, 2&rarr;1/4/7, and 1&rarr;7. These
+            errors are understandable because handwritten digits can vary substantially
+            in shape and style from person-to-person.
+        </p>
+        <p>
+            For example, a 6 with a particularly large or closed loop can resemble a 0,
+            while a 1 with an additional stroke or serif can resemble a 7. Similarly,
+            variations in people's handwriting of a 2, 4, and 7 can make those digits
+            difficult to decipher.
+        </p>
+        <p>
+            The errors therefore tend to occur on examples where the visual
+            characteristics of two digits overlap. Some of the misclassified images are
+            also difficult for a person to identify immediately, which shows that the
+            problem is not simply that the network fails on otherwise perfectly clear
+            examples.
+        </p>
+        <p>
+            The model did not make errors evenly across all possible digit combinations.
+            Instead, many errors occurred between digits with similar visual structures.
+            Examining these mistakes is useful because it shows that the model's
+            remaining errors are concentrated in ambiguous or unusually written examples.
+        </p>
         <div class="placeholder-block">
             TODO: drop in a few misclassified digit images here, same
             <code>.image-gallery</code> pattern, captioned with true vs. predicted label
             (e.g. "True: 4 &middot; Predicted: 9").
         </div>
+
+        <h3>Could this ever hit 100% accuracy?</h3>
+        <p>
+            A perfect score of 100% accuracy is difficult to achieve on handwritten data
+            because the images themselves can be ambiguous. As discussed, people may
+            write the same digit differently, and some individual examples may contain
+            shapes that resemble more than one digit.
+        </p>
+        <p>
+            The remaining errors therefore reflect both limitations of the model and the
+            inherent ambiguity of some handwritten inputs. Improving the architecture may
+            reduce some errors, but it cannot necessarily eliminate mistakes on every
+            ambiguous image of handwritten data.
+        </p>
+    </section>
+
+    <section>
+        <h2>What this means for the upload tool</h2>
+        <p>
+            The classifier page on this site uses the same trained CNN to make
+            predictions on uploaded MNIST images. A user uploads a CSV containing the
+            pixel intensities for a 28&times;28 image. The backend validates the
+            uploaded file and converts the data into the format expected by the CNN
+            before making a prediction.
+        </p>
+        <p>
+            The CSV parser accepts pixel values represented either as the original
+            0&ndash;255 intensity values or as their normalized 0&ndash;1 values. The
+            data is converted to the appropriate format before being passed to the
+            model.
+        </p>
+        <p>
+            The parser also checks for invalid uploads, including incorrect file
+            dimensions, non-numeric values, invalid file types, and inappropriate pixel
+            values. When an uploaded file fails this validation, the user will receive a
+            specific error message explaining the problem rather than the invalid data
+            being passed to the CNN.
+        </p>
+        <p>
+            This validation step is important because the CNN assumes that its input has
+            the specific structure of a valid 28&times;28 grayscale image. The upload
+            pipeline therefore acts as a gatekeeper between the user's CSV file and the
+            trained neural network to ensure only valid files are analyzed by this site.
+        </p>
+    </section>
+
+    <section>
+        <h2>Lessons learned</h2>
+        <p>
+            Testing four different architectures rather than settling on the first model
+            that performed well ended up being one of the more valuable parts of this
+            project, even though it required additional time upfront.
+        </p>
+        <p>
+            Architecture 1 was intentionally kept simple to establish a baseline. It used
+            one convolutional layer and a small dense layer and achieved 98.01%
+            accuracy. While this is still a strong result, it was about a full
+            percentage point below the other architectures. This showed that the shallow
+            architecture was not capturing the patterns in the handwritten digits as
+            effectively as the deeper models.
+        </p>
+        <p>
+            The results from Architectures 2, 3, and 4 were more interesting. We
+            initially expected performance to continue improving as the models became
+            more complex. Architecture 4 was designed specifically to try to push
+            accuracy beyond 99.5%. We added Batch Normalization and increased the number
+            of training epochs. Despite these changes, the model finished at 99.24%.
+            This was very close to the results from Architectures 2 and 3. In fact, all
+            three deeper architectures were within about two tenths of a percentage
+            point of each other.
+        </p>
+        <p>
+            This suggests that the model reached a point where additional complexity was
+            providing very little improvement. The remaining errors may not simply be a
+            result of limited model capacity. Some digits are difficult to distinguish
+            even visually, which could explain why adding more complexity did not have
+            the impact we expected.
+        </p>
+        <p>
+            The main takeaway from this comparison was that a more complex model does not
+            always produce better results. Architecture 3 was ultimately selected
+            because its performance was comparable to the more complex models. It was
+            also smaller and more efficient to train. For this project, it offered a
+            better balance between performance and complexity.
+        </p>
+        <p>
+            With more time, it would be useful to explore changes beyond adding more
+            layers. One option would be adjusting the dropout rate or testing a lower
+            learning rate. Data augmentation could also be used to slightly rotate or
+            shift the training images. Based on our results, these types of changes may
+            have more potential than continuing to increase the size of the network.
+        </p>
     </section>
 </article>
 {% endblock %}
