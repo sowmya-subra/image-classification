@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}How I built this | MNIST Digit Classifier{% endblock %}
 
@@ -30,6 +31,11 @@
             28&times;28 grid and get a prediction.
         </p>
     </section>
+
+    <figure class="sample-figure">
+        <img src="{% static 'img/sample_digit.png' %}" alt="A sample MNIST training image: a handwritten 5, labeled &quot;Label: 5&quot;">
+        <figcaption>A raw MNIST training example (index 0) before any preprocessing, labeled 5.</figcaption>
+    </figure>
 
     <section>
         <h2>Preprocessing</h2>
@@ -150,6 +156,10 @@ Conv2D(64, 3x3) &rarr; Flatten &rarr; Dense(64) &rarr; Dropout(0.5) &rarr; Dense
         </p>
 
         <h3>Well-classified examples</h3>
+        <figure class="sample-figure sample-figure--wide">
+            <img src="{% static 'img/correct_grid.png' %}" alt="A 3x3 grid of nine correctly classified MNIST test digits, each captioned with its true and predicted label, which match in every case.">
+            <figcaption>Nine correctly classified test digits, with true and predicted labels shown above each.</figcaption>
+        </figure>
         <p>
             The correctly classified examples above demonstrate the types of images the
             model handles well. These digits generally have clear and distinguishable
@@ -157,15 +167,14 @@ Conv2D(64, 3x3) &rarr; Flatten &rarr; Dense(64) &rarr; Dropout(0.5) &rarr; Dense
             determine. This is similar to how a person would read them with their own
             eyes.
         </p>
-        <div class="placeholder-block">
-            TODO: drop in a few high-confidence correctly-classified digit images here
-            (e.g. as an <code>.image-gallery</code> grid of <code>&lt;figure&gt;</code>
-            elements, each with a small caption like "Predicted: 7 (99.9%)").
-        </div>
 
         <h3>Misclassified examples</h3>
+        <figure class="sample-figure sample-figure--wide">
+            <img src="{% static 'img/misclassified_grid.png' %}" alt="A 3x3 grid of nine misclassified MNIST test digits, each captioned with its true and predicted label, which differ in every case.">
+            <figcaption>Nine misclassified test digits, with true and predicted labels shown above each.</figcaption>
+        </figure>
         <p>
-            The misclassified examples provide insight into where our selected model has
+            The misclassified examples above provide insight into where our selected model has
             difficulty. Several errors involve visually similar digits, such as
             mistaking 4&rarr;9, 6&rarr;0, 3&rarr;5, 2&rarr;1/4/7, and 1&rarr;7. These
             errors are understandable because handwritten digits can vary substantially
@@ -190,11 +199,6 @@ Conv2D(64, 3x3) &rarr; Flatten &rarr; Dense(64) &rarr; Dropout(0.5) &rarr; Dense
             Examining these mistakes is useful because it shows that the model's
             remaining errors are concentrated in ambiguous or unusually written examples.
         </p>
-        <div class="placeholder-block">
-            TODO: drop in a few misclassified digit images here, same
-            <code>.image-gallery</code> pattern, captioned with true vs. predicted label
-            (e.g. "True: 4 &middot; Predicted: 9").
-        </div>
 
         <h3>Could this ever hit 100% accuracy?</h3>
         <p>
